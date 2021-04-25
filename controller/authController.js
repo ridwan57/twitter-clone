@@ -2,7 +2,7 @@ import User from "../models/User";
 import bcrypt from "bcrypt";
 
 export const home = (req, res, next) => {
-  const payload = { userLoggedIn: req.session.user };
+  const payload = { userLoggedIn: req.session.user, pageTitle: "Home" };
   console.log("req.session.user:", req.session.user);
   res.render("home", payload);
 };
@@ -95,4 +95,14 @@ export const registerCredentials = async (req, res, next) => {
   req.session.user = newUser;
   // res.render("register", payload);
   res.status(200).redirect("/");
+};
+
+export const logout = (req, res, next) => {
+  if (req.session) {
+    req.session.destroy(() => {
+      res.redirect("/login");
+    });
+  } else {
+    ress.redirect("/login");
+  }
 };
