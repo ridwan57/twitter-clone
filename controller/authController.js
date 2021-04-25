@@ -15,3 +15,12 @@ export const login = (req, res, next) => {
   };
   res.render("login", payload);
 };
+
+export const register = (req, res, next) => {
+  const payload = {
+    userLoggedIn: {
+      firstName: "New title",
+    },
+  };
+  res.render("register", payload);
+};
