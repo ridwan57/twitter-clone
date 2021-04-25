@@ -2,6 +2,7 @@ import express from "express";
 import { readdirSync } from "fs";
 import cors from "cors";
 import path from "path";
+import bodyParser from "body-parser";
 import mongoose from "mongoose";
 
 require("dotenv").config();
@@ -18,6 +19,7 @@ mongoose
   .catch((err) => console.log("Database: ", err));
 
 const app = express();
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "pug");
 app.set("views", "views");
