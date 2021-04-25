@@ -1,11 +1,9 @@
 import User from "../models/User";
+import bcrypt from "bcrypt";
 
 export const home = (req, res, next) => {
-  const payload = {
-    userLoggedIn: {
-      firstName: "New title",
-    },
-  };
+  const payload = { userLoggedIn: req.session.user };
+  console.log("req.session.user:", req.session.user);
   res.render("home", payload);
 };
 
@@ -16,6 +14,38 @@ export const login = (req, res, next) => {
     },
   };
   res.render("login", payload);
+};
+
+export const loginCredentials = async (req, res, next) => {
+  let payload = req.body;
+  const { logUsername, logPassword } = req.body;
+
+  if (!logUsername || !logPassword) {
+    payload.errorMessage = "Make sure each field has a valid value.";
+    res.status(200).render("login");
+  }
+
+  let user = await User.findOne({
+    $or: [{ username: logUsername }, { email: logUsername }],
+  }).catch((error) => {
+    console.log(error);
+    payload.errorMessage = "Something went wrong.";
+    res.status(200).render("login", payload);
+  });
+
+  if (user === null) {
+    payload.errorMessage = "Login credentials incorrect.";
+    return res.status(200).render("login", payload);
+  }
+
+  let result = await bcrypt.compare(logPassword, user.password);
+  if (result) {
+    req.session.user = user;
+    return res.redirect("/");
+  } else {
+    payload.errorMessage = "Wrong password.";
+    return res.status(200).render("login", payload);
+  }
 };
 
 export const register = (req, res, next) => {
@@ -53,11 +83,16 @@ export const registerCredentials = async (req, res, next) => {
     } already in use`;
     res.render("register", payload);
   }
-  const newUser = await User.create(req.body).catch(() => {
+  let data = req.body;
+  data.password = await bcrypt.hash(data.password, 10);
+  const newUser = await User.create(data).catch(() => {
     payload.errorMessage = "Creating User Database Error ";
+    req.session.user = newUser;
     res.render("register", payload);
+    // res.status(200).redirect("/");
   });
 
-  payload.errorMessage = `Created User ${newUser}`;
-  res.render("register", payload);
+  req.session.user = newUser;
+  // res.render("register", payload);
+  res.status(200).redirect("/");
 };

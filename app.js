@@ -4,6 +4,7 @@ import cors from "cors";
 import path from "path";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
+import session from "express-session";
 
 require("dotenv").config();
 
@@ -19,6 +20,13 @@ mongoose
   .catch((err) => console.log("Database: ", err));
 
 const app = express();
+app.use(
+  session({
+    secret: process.env.HASH_SECRET,
+    resave: true,
+    saveUninitialized: false,
+  })
+);
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "pug");
