@@ -2,7 +2,11 @@ import User from "../models/User";
 import bcrypt from "bcrypt";
 
 export const home = (req, res, next) => {
-  const payload = { userLoggedIn: req.session.user, pageTitle: "Home" };
+  const payload = {
+    userLoggedIn: req.session.user,
+    userLoggedInJs: JSON.stringify(req.session.user),
+    pageTitle: "Home",
+  };
   console.log("req.session.user:", req.session.user);
   res.render("home", payload);
 };
