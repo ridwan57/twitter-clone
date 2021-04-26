@@ -4,35 +4,43 @@ import Post from "../models/Post";
 
 export const createPost = async (req, res, next) => {
   if (!req.body.content) {
-    return res.sendStatus(404);
+    console.log("Content param not sent with request");
+    return res.sendStatus(400);
   }
-  const { content } = req.body;
-  let newPost = await Post.create({
-    content,
-    postedBy: req.session.user,
-  }).catch((err) => {
-    console.log("creating post database error");
-    return res.sendStatus(404);
-  });
-  newPost = await User.populate(newPost, { path: "postedBy" });
-  return res.status(201).send(newPost);
 
-  console.log("req:", content);
+  var postData = {
+    content: req.body.content,
+    postedBy: req.session.user,
+  };
+
+  if (req.body.replyTo) {
+    postData.replyTo = req.body.replyTo;
+  }
+
+  Post.create(postData)
+    .then(async (newPost) => {
+      newPost = await User.populate(newPost, { path: "postedBy" });
+
+      res.status(201).send(newPost);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.sendStatus(400);
+    });
 };
 
 export const getPosts = async (req, res, next) => {
   const createdAt = "createdAt";
-  let posts = await Post.find({})
-    .populate("postedBy")
-    .populate("retweetData")
-    .sort({ createdAt: -1 })
-    .catch((err) => {
-      console.log("creating post database error");
-      return res.sendStatus(404);
-    });
-  posts = await User.populate(posts, { path: "retweetData.postedBy" });
-  //   console.log("posts:", posts);
+  let posts = await getPostsFunc();
   return res.status(201).send(posts);
+
+  console.log("req:", content);
+};
+
+export const getPostById = async (req, res, next) => {
+  const postId = req.params.id;
+  let posts = await getPostsFunc({ _id: postId }).catch(() => {});
+  return res.status(201).send(posts[0]);
 
   console.log("req:", content);
 };
@@ -122,3 +130,15 @@ export const retweetPost = async (req, res, next) => {
 
   res.status(200).send(post);
 };
+
+async function getPostsFunc(filter = {}) {
+  var results = await Post.find(filter)
+    .populate("postedBy")
+    .populate("retweetData")
+    .populate("replyTo")
+    .sort({ createdAt: -1 })
+    .catch((error) => console.log(error));
+
+  results = await User.populate(results, { path: "replyTo.postedBy" });
+  return await User.populate(results, { path: "retweetData.postedBy" });
+}
